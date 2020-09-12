@@ -39,7 +39,7 @@ const Browser = async function (){
         console.log("Launching browser...");
         await connectToMongodb();
         const browser = await puppeteer.launch({
-            headless: true,
+            headless: false,
             args : [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -83,48 +83,26 @@ const Sleep= function(ms) {
     });
 }
 
-const checkIfInDb = async function (ALLLINKS, link) {
+
+
+const singleADCheckIfInDb = async function (SINGLEAD, url, newPrice, beds, baths, cars, lastArea, generalFeatures, internalFeatures, externalFeatures, description) {
 
     console.log("checking if in db");
 
-    let query = {url: link};
+    let query = {url:url};
     let update = {
         $set: {
+            url: url,
+            price : newPrice,
+            beds : beds,
+            baths: baths,
+            cars : cars,
+            area: lastArea,
+            generalFeatures :generalFeatures,
+            internalFeatures : internalFeatures,
+            externalFeatures: externalFeatures,
+            description: description
 
-            url: link,
-        }
-    };
-
-    await Sleep(1000);
-    let options = { upsert: true, returnOriginal:false };
-
-    ALLLINKS.findOneAndUpdate(query, update, options, (err)=>{
-        if (err) {
-            console.log("Something wrong when updating data!",err);
-        }
-        console.log("Saved to db!")
-    });
-
-
-};
-
-
-const singleADCheckIfInDb = async function (SINGLEAD, complete) {
-
-    console.log("checking if in db");
-
-    let query = {url: complete[0]};
-    let update = {
-        $set: {
-            url: complete[0],
-            title : complete[1],
-            price : complete[2],
-            location: complete[3],
-            area : complete[4],
-            description: complete[5],
-            transactionType : complete[6],
-            published : complete[7],
-            images: complete[8]
         }
     };
 
@@ -141,6 +119,26 @@ const singleADCheckIfInDb = async function (SINGLEAD, complete) {
 
 };
 
+let removeHtmlTags = async function (string, array){
+    /**
+     * @param {String} string takes in the string you want stripped of html elements
+     * @param {Array} array takes in an array of tags you want to keep in the string
+     * @return {String}  returns the string of stripped html or with the tags you specified maintained
+     */
+    try {
+
+        return array ? string.split("<").filter(function(val){ return f(array, val); }).map(function(val){ return f(array, val); }).join("") : string.split("<").map(function(d){ return d.split(">").pop(); }).join("");
+        function f(array, value){
+            return array.map(function(d){ return value.includes(d + ">"); }).indexOf(true) != -1 ? "<" + value : value.split(">")[1];
+        }
+
+    }catch (e) {
+        console.log("This error is coming from the removeHtmlTags function",e);
+    }
 
 
-module.exports = {Sleep, Browser, checkIfInDb,singleADCheckIfInDb,connectToMongodb};
+}
+
+
+
+module.exports = {Sleep, Browser,singleADCheckIfInDb,connectToMongodb, removeHtmlTags};

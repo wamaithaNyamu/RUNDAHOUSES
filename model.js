@@ -5,27 +5,21 @@ const mongoose = require("mongoose");
 const allUrlsSchema = new mongoose.Schema({
     url : {
         type: String,
-        default: ""
     },
     price : {
-        type: String,
-        default: ""
+        type: Number,
     },
     beds : {
         type: Number,
-        default: 0
     },
     baths : {
-        type: String,
-        default: ""
+        type: Number,
     },
     cars : {
-        type: String,
-        default: ""
+        type: Number,
     },
     area : {
-        type: String,
-        default: ""
+        type: Number,
     },
     generalFeatures : {
         type: Array,

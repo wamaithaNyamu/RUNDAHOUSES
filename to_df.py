@@ -23,7 +23,7 @@ def connect_to_mongo():
 
 def convert_json_to_csv(data):
     df = pd.DataFrame(data)
-    df.to_csv("./runda_houses.csv", index=None)
+    df.to_csv(r'./runda-houses.csv', index=None)
 
 
 if __name__ == "__main__":

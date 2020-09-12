@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 let allLinks = [];
 
 // url we are scraping housing prices
-const BuyRentUrl = "https://www.buyrentkenya.com/houses-for-sale/westlands/runda?page=1";
+const BuyRentUrl = "https://www.buyrentkenya.com/houses-for-sale/westlands/runda?page=";
 
 
 async function launchPage() {
@@ -37,9 +37,11 @@ async function getAllLinksOnPage(page) {
      * Stores them to the db
      */
     try {
-        await page.goto(BuyRentUrl, {timeout: 180000});
         console.log("On landing page");
-        for (let i = 1; i < 9; i++) {
+        for (let i = 2; i < 9; i++) {
+            let currentUrl = BuyRentUrl + i;
+            console.log("The current url is ", currentUrl)
+            await page.goto(currentUrl, {timeout: 180000});
             console.log("On page ", i)
             console.log('Getting details');
             const selector = ".property-title > a"
@@ -52,10 +54,7 @@ async function getAllLinksOnPage(page) {
                 allLinks.push(links[i]);
                 await utilities.singleADCheckIfInDb(ALLLINKS, links[i]);
             }
-            let nextButton = await page.$('.fa-chevron-right');
-            console.log("clicking next button");
-            await nextButton.click();
-            await utilities.Sleep(10000);
+
         }
 
 
@@ -93,7 +92,7 @@ async function getDetail(page, selector) {
 
         } else {
             console.log("No such element");
-            return "None";
+            return 0;
         }
 
 
@@ -103,20 +102,46 @@ async function getDetail(page, selector) {
 
 }
 
+async function getPrice(page) {
+    //    get price
+    try {
+
+        const price = await getDetail(page, ".amenities-grid > .body-left > .info-row > .item-price > .text-primary");
+
+
+
+            const newPrice = price.split(' ')[2]
+            const cleanPrice = newPrice.replace(/,/g, '')
+            let finalPrice = parseInt(cleanPrice);
+            console.log("price", finalPrice);
+            if(isNaN(finalPrice)){
+                return 0
+            }else{
+
+                 return finalPrice
+            }
+
+
+    } catch (e) {
+        console.log("This error is coming from getPrice ", e)
+    }
+}
+
+
+
 async function getDetails(page) {
     try {
         console.log("In get details");
-
+        console.log("ALL LINKS ARE", allLinks.length);
 
         for (let i = 0; i < allLinks.length; i++) {
             await page.goto(allLinks[i], {timeout: 180000});
+            //get price
+            let price = await getPrice(page);
 
-            //    get price
-            const price = await getDetail(page, ".amenities-grid > .body-left > .info-row > .item-price > .text-primary");
-            const newPrice = price.split(' ')[2]
-            console.log("price", newPrice)
             //    get beds
             const beds = await getDetail(page, ".col-lg-12 > .table-cell > .info-row > p > .h-beds");
+
             console.log("beds", beds)
 
             //    get baths
@@ -130,22 +155,28 @@ async function getDetails(page) {
             //    get area
             let lastArea;
             const area = await getDetail(page, ".col-lg-12 > .table-cell > .info-row > p > .h-area");
-            console.log("area", area)
-            if (area =="none"){
-                lastArea = "None";
-                console.log("newArea", lastArea)
+            console.log("ARREEEAAA", area)
+            if (area === null || area === 0 ) {
+                lastArea = 0;
+                console.log("newArea", lastArea);
 
-            }else{
-                const newArea = area.split(/(?=[²³ⁿºʳᵈ™℠®])/)[0]
-                const lastArea = newArea.slice(0, -1)
-                console.log("newArea", lastArea)
+            } else {
+                const newArea = area.split(/(?=[²³ⁿºʳᵈ™℠®])/)[0];
+                console.log("newArea", newArea)
+
+                const onlyArea = newArea.slice(0, -1);
+                console.log("onlyArea", onlyArea)
+
+                const cleanArea = onlyArea.replace(/,/g, '');
+                console.log("cleanArea", cleanArea)
+
+                 lastArea = parseInt(cleanArea);
+                console.log("lastArea", lastArea)
             }
-
 
 
             //    get general features
             let general, internal, external = [];
-
 
 
             general = await page.evaluate(() => {
@@ -169,18 +200,17 @@ async function getDetails(page) {
                 const lis = Array.from(document.querySelectorAll('div.col-md-4:nth-child(2) > div:nth-child(1) > div:nth-child(2) li'))
                 return lis.map(li => li.textContent)
             });
+
             console.log("external ", typeof (external), external, external[0]);
 
             //    get description
             const description = await getDetail(page, '.mrc-content-wrap');
             console.log("desc ", description);
-            const complete = [];
 
             //    store to db
             let schema = await allUrlsSchema;
             let ALLLINKS = await mongoose.model('RundaHouses', schema);
-            await utilities.singleADCheckIfInDb(ALLLINKS, allLinks[i], newPrice, beds, baths, cars, lastArea, general, internal, external, description);
-
+            await utilities.singleADCheckIfInDb(ALLLINKS, allLinks[i], price, parseInt(beds), parseInt(baths), parseInt(cars), lastArea, general, internal, external, description);
 
         }
 

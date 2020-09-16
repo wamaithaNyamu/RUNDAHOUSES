@@ -37,7 +37,6 @@ const Browser = async function (){
      */
     try{
         console.log("Launching browser...");
-        await connectToMongodb();
         const browser = await puppeteer.launch({
             headless: false,
             args : [
@@ -52,7 +51,6 @@ const Browser = async function (){
                 '--ignore-certificate-errors',
                 '--proxy-server="direct://"',
                 '--proxy-bypass-list=*',
-                '--headless',
                 '--hide-scrollbars',
                 '--mute-audio',
                 '--disable-gl-drawing-for-tests',
@@ -85,7 +83,7 @@ const Sleep= function(ms) {
 
 
 
-const singleADCheckIfInDb = async function (SINGLEAD, url, newPrice, beds, baths, cars, lastArea, generalFeatures, internalFeatures, externalFeatures, description) {
+const singleADCheckIfInDb = async function (SINGLEADMODEL, url, newPrice, beds, baths, cars, lastArea, generalFeatures, internalFeatures, externalFeatures, description) {
 
     console.log("checking if in db");
 
@@ -109,7 +107,7 @@ const singleADCheckIfInDb = async function (SINGLEAD, url, newPrice, beds, baths
     await Sleep(1000);
     let options = { upsert: true, returnOriginal:false };
 
-    SINGLEAD.findOneAndUpdate(query, update, options, (err, doc)=>{
+    SINGLEADMODEL.findOneAndUpdate(query, update, options, (err, doc)=>{
         if (err) {
             console.log("Something wrong when updating data!",err);
         }

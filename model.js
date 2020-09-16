@@ -35,7 +35,7 @@ const allUrlsSchema = new mongoose.Schema({
     },
     description  : {
         type: String,
-        default: ""
+
     }
 
 });
